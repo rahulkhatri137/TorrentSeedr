@@ -10,36 +10,30 @@ def fileLink(message):
     userLanguage = dbSql.getSetting(userId, 'language')
 
     if floodControl(message, userLanguage):
-        ac = dbSql.getDefaultAc(userId)
-
-        #! If user has an account
-        if ac:
+        if ac := dbSql.getDefaultAc(userId):
             id = message.text[10:]
             account = Seedr(token=ac['token'])
 
             sent = bot.send_message(message.chat.id, language['fetchingLink'][userLanguage])
             response = account.fetchFile(id[1:]).json()
 
-            if 'error' not in response:
-                #! If download link found
-                if 'url' in response:
-                    encodedUrl = urlEncode(response['url'])
-                    text = f"🖹 <b>{response['name']}</b>\n\n"
-                    text += f"🔗 <code>{encodedUrl}</code>\n\n<b>🔥via @TorrentSeedrBot</b>"
-
-                    markup = telebot.types.InlineKeyboardMarkup()
-                    markup.add(telebot.types.InlineKeyboardButton(text=language['openInBrowserBtn'][userLanguage], url=encodedUrl))
-
-                    if id[0] != 'u':
-                        markup.add(telebot.types.InlineKeyboardButton(text=language['openInPlayerBtn'][userLanguage], callback_data=f'getPlaylist_000_file_{id[1:]}'))
-                    
-                    markup.add(telebot.types.InlineKeyboardButton(text=language['joinChannelBtn'][userLanguage], url='t.me/h9youtube'), telebot.types.InlineKeyboardButton(text=language['joinDiscussionBtn'][userLanguage], url='https://t.me/+mxHaXtNFM1g5MzI1'))
-                    
-                    bot.edit_message_text(text=text, chat_id=message.chat.id, message_id=sent.id, reply_markup=markup)
-
-            else:
+            if 'error' in response:
                 exceptions(message, response, ac, userLanguage)
-        
-        #! If no accounts
+
+            elif 'url' in response:
+                encodedUrl = urlEncode(response['url'])
+                text = f"🖹 <b>{response['name']}</b>\n\n"
+                text += f"🔗 <code>{encodedUrl}</code>\n\n<b>🔥via @TorrentSeedrBot</b>"
+
+                markup = telebot.types.InlineKeyboardMarkup()
+                markup.add(telebot.types.InlineKeyboardButton(text=language['openInBrowserBtn'][userLanguage], url=encodedUrl))
+
+                if id[0] != 'u':
+                    markup.add(telebot.types.InlineKeyboardButton(text=language['openInPlayerBtn'][userLanguage], callback_data=f'getPlaylist_000_file_{id[1:]}'))
+
+                markup.add(telebot.types.InlineKeyboardButton(text=language['joinChannelBtn'][userLanguage], url='t.me/h9youtube'), telebot.types.InlineKeyboardButton(text=language['joinDiscussionBtn'][userLanguage], url='https://t.me/+mxHaXtNFM1g5MzI1'))
+
+                bot.edit_message_text(text=text, chat_id=message.chat.id, message_id=sent.id, reply_markup=markup)
+
         else:
             noAccount(message, userLanguage)

@@ -13,10 +13,7 @@ async def addTorrent(message, userLanguage, magnetLink=None, messageId=None):
     userId = message.from_user.id
 
     if floodControl(message, userLanguage):
-        ac = dbSql.getDefaultAc(userId)
-
-        #! If user has an account
-        if ac:
+        if ac := dbSql.getDefaultAc(userId):
             #! If the text is a valid url or magnet link
             if magnetLink or message.text.startswith('http') or 'magnet:?' in message.text:
                 #! Add torrent in the account
@@ -24,11 +21,11 @@ async def addTorrent(message, userLanguage, magnetLink=None, messageId=None):
                 #!? If torrent is added via start paramater
                 if magnetLink:
                     sent = bot.edit_message_text(text=language['collectingInfo'][userLanguage], chat_id=message.chat.id, message_id=messageId)
-                
+
                 #!? If torrent is added via direct message
                 else:
                     sent = bot.send_message(message.chat.id, language['collectingInfo'][userLanguage])
-                
+
                 account = Seedr(token=ac['token'])
                 response = account.addTorrent(magnetLink or message.text).json()
 
@@ -44,7 +41,7 @@ async def addTorrent(message, userLanguage, magnetLink=None, messageId=None):
                     #! Invalid magnet link
                     elif response['result'] == 'parsing_error':
                         invalidMagnet(message, userLanguage, sent.id)
-                    
+
                     #! If parallel downloads exceeds
                     elif response['result'] == 'queue_full_added_to_wishlist':
                         bot.edit_message_text(chat_id=message.chat.id, message_id=sent.id, text=language['parallelDownloadExceed'][userLanguage])
@@ -52,15 +49,14 @@ async def addTorrent(message, userLanguage, magnetLink=None, messageId=None):
                     #! If the torrent is already downloading
                     elif response == {'result': True}:
                         bot.edit_message_text(chat_id=message.chat.id, message_id=sent.id, text=language['alreadyDownloading'][userLanguage])
-                
+
                 else:
                     exceptions(message, response, ac, userLanguage)
-            
+
             #! Invalid magnet link
             else:
                 invalidMagnet(message, userLanguage, messageId)
-            
-        #! If no accounts
+
         else:
             noAccount(message, userLanguage)
 

@@ -9,10 +9,7 @@ def cancelDownload(message, called=False):
     userLanguage = dbSql.getSetting(userId, 'language')
 
     if floodControl(message, userLanguage):
-        ac = dbSql.getDefaultAc(userId)
-
-        #! If user has an account
-        if ac:
+        if ac := dbSql.getDefaultAc(userId):
             account = Seedr(token=ac['token'])
 
             if not called:
@@ -21,17 +18,14 @@ def cancelDownload(message, called=False):
 
             else:
                 id = message.data[7:]
-            
+
             response = account.deleteTorrent(id).json()
 
-            if 'error' not in response:
-                #! If torrent cancelled successfully
-                if response['result'] == True:
-                    bot.edit_message_text(text=language['cancelledSuccessfully'][userLanguage], chat_id=message.message.chat.id if called else message.chat.id, message_id=message.message.id if called else sent.id)
-
-            else:
+            if 'error' in response:
                 exceptions(message, response, ac, userLanguage, called)
-            
-        #! If no accounts
+
+            elif response['result'] == True:
+                bot.edit_message_text(text=language['cancelledSuccessfully'][userLanguage], chat_id=message.message.chat.id if called else message.chat.id, message_id=message.message.id if called else sent.id)
+
         else:
             noAccount(message, userLanguage)

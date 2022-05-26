@@ -9,10 +9,7 @@ def removeFile(message):
     userLanguage = dbSql.getSetting(userId, 'language')
 
     if floodControl(message, userLanguage):
-        ac = dbSql.getDefaultAc(userId)
-
-        #! If user has an account
-        if ac:
+        if ac := dbSql.getDefaultAc(userId):
             sent = bot.send_message(message.chat.id, language['removingFile'][userLanguage])
             id = message.text[8:]
 
@@ -20,14 +17,11 @@ def removeFile(message):
 
             response = account.deleteFile(id).json()
 
-            if 'error' not in response:
-                #! If file removed successfully
-                if response['result'] == True:
-                    bot.edit_message_text(text=language['removedSuccessfully'][userLanguage], chat_id=message.chat.id, message_id=sent.id)
-            
-            else:
+            if 'error' in response:
                 exceptions(message, response, ac, userLanguage)
-            
-        #! If no accounts
+
+            elif response['result'] == True:
+                bot.edit_message_text(text=language['removedSuccessfully'][userLanguage], chat_id=message.chat.id, message_id=sent.id)
+
         else:
             noAccount(message, userLanguage)

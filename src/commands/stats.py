@@ -5,17 +5,23 @@ from src.objs import *
 def stats(message):
     if message.from_user.id == int(config['adminId']):
         languageSet = ["english"]
-        
+
         msg = f'<b>📊 Statistics</b>\n\n'
-        
-        languageStats = {}
-        for i in languageSet:
-            languageStats[i.capitalize()] = len(dbSql.getUsers(i)) if dbSql.getUsers(i) else 0
 
-        languageStats = {k: v for k, v in sorted(languageStats.items(), key=lambda item: item[1], reverse=True)}
+        languageStats = {
+            i.capitalize(): len(dbSql.getUsers(i)) if dbSql.getUsers(i) else 0
+            for i in languageSet
+        }
 
-        for i in languageStats:
-            msg += f'{i}: {languageStats[i]}\n'
+        languageStats = dict(
+            sorted(
+                languageStats.items(), key=lambda item: item[1], reverse=True
+            )
+        )
+
+
+        for i, value in languageStats.items():
+            msg += f'{i}: {value}\n'
 
         msg += f'\n<b>Total users: {len(dbSql.getAllUsers()) if dbSql.getAllUsers() else 0}</b>'
         bot.send_message(chat_id=message.chat.id, text=msg)

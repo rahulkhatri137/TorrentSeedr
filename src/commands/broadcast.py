@@ -14,18 +14,17 @@ def broadcast(message):
 def broadcast2(message):
     if message.text == '/cancel':
         bot.send_message(chat_id=message.chat.id, text='❌ Broadcast cancelled')
+    elif message.text == '/all':
+        sent = bot.send_message(chat_id=message.chat.id, text='<b>Choose the audience to exclude from broadcasting.</b>\n\n<code>bengali</code>, <code>belarusian</code>, <code>catalan</code>, <code>dutch</code>, <code>english</code>, <code>french</code>, <code>german</code>, <code>hindi</code>, <code>italian</code>, <code>korean</code>, <code>malay</code>, <code>nepali</code>, <code>polish</code>, <code>portuguese</code>, <code>russian</code>, <code>spanish</code>, <code>turkish</code>, <code>ukrainian</code> \n\n<b>Separate by comma for multiple exclusion.</b>\n\n/cancel to cancel the broadcast.\n/skip to Skip the exclusion.')
+        bot.register_next_step_handler(sent, broadcastExclusion)
+
+    elif message.text in ['/bengali', '/belarusian', '/catalan', '/dutch', '/english', '/french', '/german', '/hindi', '/italian', '/korean', '/malay', '/nepali', '/polish', '/portuguese', '/russian', '/spanish', '/turkish', '/ukrainian']:
+        audience = message.text[1:]
+        sent = bot.send_message(chat_id=message.chat.id, text='<b>Send the message to broadcast.</b>\n\nMarkup: HTML\nTags allowed: a href, b, i, u, s, code, pre, h1, inv, br\n\n/cancel to cancel the broadcast.')
+        bot.register_next_step_handler(sent, broadcast3, audience)
+
     else:
-        if message.text == '/all':
-            sent = bot.send_message(chat_id=message.chat.id, text='<b>Choose the audience to exclude from broadcasting.</b>\n\n<code>bengali</code>, <code>belarusian</code>, <code>catalan</code>, <code>dutch</code>, <code>english</code>, <code>french</code>, <code>german</code>, <code>hindi</code>, <code>italian</code>, <code>korean</code>, <code>malay</code>, <code>nepali</code>, <code>polish</code>, <code>portuguese</code>, <code>russian</code>, <code>spanish</code>, <code>turkish</code>, <code>ukrainian</code> \n\n<b>Separate by comma for multiple exclusion.</b>\n\n/cancel to cancel the broadcast.\n/skip to Skip the exclusion.')
-            bot.register_next_step_handler(sent, broadcastExclusion)
-        
-        elif message.text in ['/bengali', '/belarusian', '/catalan', '/dutch', '/english', '/french', '/german', '/hindi', '/italian', '/korean', '/malay', '/nepali', '/polish', '/portuguese', '/russian', '/spanish', '/turkish', '/ukrainian']:
-            audience = message.text[1:]
-            sent = bot.send_message(chat_id=message.chat.id, text='<b>Send the message to broadcast.</b>\n\nMarkup: HTML\nTags allowed: a href, b, i, u, s, code, pre, h1, inv, br\n\n/cancel to cancel the broadcast.')
-            bot.register_next_step_handler(sent, broadcast3, audience)
-        
-        else:
-            bot.send_message(chat_id=message.chat.id, text='❌ Unknown audience. Broadcast cancelled.')
+        bot.send_message(chat_id=message.chat.id, text='❌ Unknown audience. Broadcast cancelled.')
 
 def broadcastExclusion(message):
     if message.text == '/skip':
@@ -51,18 +50,15 @@ def broadcast4(message, audience, exclude, textMessage):
     markup = telebot.types.InlineKeyboardMarkup()
     if message.text == '/cancel':
         bot.send_message(chat_id=message.chat.id, text='❌ Broadcast cancelled')
-    
+
     elif message.text == '/skip':
         if audience == 'all':
-            if exclude:
-                users = dbSql.getUsersExcept(exclude)
-            else:
-                users = dbSql.getAllUsers()
+            users = dbSql.getUsersExcept(exclude) if exclude else dbSql.getAllUsers()
         else:
             users = dbSql.getUsers(audience)
-        
+
         users = len(users) if users else 0
-        
+
         try:
             bot.send_message(message.chat.id, text=f'<b>Message Preview</b>\n\n{textMessage}',)
             sent = bot.send_message(message.chat.id, text=f"/send to broadcast this message.\n\nTarget Audience: {audience}\nExcluded Audience: {' '.join(exclude) if exclude else None}\nTotal audience: {users}")
@@ -72,23 +68,20 @@ def broadcast4(message, audience, exclude, textMessage):
 
     else:
         if audience == 'all':
-            if exclude:
-                users = dbSql.getUsersExcept(exclude)
-            else:
-                users = dbSql.getAllUsers()
+            users = dbSql.getUsersExcept(exclude) if exclude else dbSql.getAllUsers()
         else:
             users = dbSql.getUsers(audience)
-        
+
         users = len(users) if users else 0
 
         try:
             for i in message.text.split('\n'):
                 markup.add(telebot.types.InlineKeyboardButton(text=i.split('->')[0].strip(), url=i.split('->')[1].strip()))
-        
+
             bot.send_message(message.chat.id, text=f'<b>Message Preview</b>\n\n{textMessage}', reply_markup=markup)
             sent = bot.send_message(message.chat.id, text=f"/send to broadcast this message.\n\nTarget Audience: {audience}\nExcluded Audience: {' '.join(exclude) if exclude else None}\nTotal audience: {users}")
             bot.register_next_step_handler(sent, broadcast5, audience, exclude, textMessage, markup)
-        
+
         except Exception as e:
             bot.send_message(message.chat.id, text=f"<b>⚠️ Error</b>\n\n{str(e).replace('<','')}")
 
@@ -96,23 +89,20 @@ def broadcast5(message, audience, exclude, textMessage, markup):
     if message.text == '/send':
         sent = bot.send_message(chat_id=message.chat.id, text='<code>Broadcasting message</code>')
         if audience == 'all':
-            if exclude:
-                users = dbSql.getUsersExcept(exclude)
-            else:
-                users = dbSql.getAllUsers()
+            users = dbSql.getUsersExcept(exclude) if exclude else dbSql.getAllUsers()
         else:
             users = dbSql.getUsers(audience)
-        failure = 0
-        success = 0
         updateCount = 0
 
         if users:
+            failure = 0
+            success = 0
             for userId in users:
                 try:
                     bot.send_message(chat_id=userId, text=textMessage, reply_markup=markup)
                     success += 1
                     updateCount += 1
-                
+
                 except Exception:
                     failure += 1
                     updateCount += 1
@@ -125,6 +115,11 @@ def broadcast5(message, audience, exclude, textMessage, markup):
 
             bot.edit_message_text(chat_id=message.chat.id, message_id=sent.message_id, text=f'<b>✈️ Broadcast Report</b>\n\nSuccess: {success}\nFailure: {failure}')
         else:
-            bot.edit_message_text(chat_id=message.chat.id, message_id=sent.message_id, text=f'❌ No user to broadcast message.')
+            bot.edit_message_text(
+                chat_id=message.chat.id,
+                message_id=sent.message_id,
+                text='❌ No user to broadcast message.',
+            )
+
     else:
         bot.send_message(chat_id=message.chat.id, text='❌ Broadcast cancelled')

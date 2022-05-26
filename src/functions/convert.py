@@ -12,7 +12,7 @@ def convertSize(byte):
    i = int(math.floor(math.log(byte, 1024)))
    p = math.pow(1024, i)
    s = round(byte / p, 2)
-   return "%s %s" % (s, size_name[i])
+   return f"{s} {size_name[i]}"
 
 #: Convert seconds into human-readable time
 def convertTime(seconds):
@@ -23,4 +23,4 @@ def convertTime(seconds):
    i = int(math.floor(math.log(seconds, 60)))
    p = math.pow(60, i)
    s = round(seconds / p, 2)
-   return "%s %s" % (s, size_name[i])
+   return f"{s} {size_name[i]}"
